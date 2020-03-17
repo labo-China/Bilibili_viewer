@@ -84,7 +84,7 @@ def video(av_num):
     print('稿件:', videonum)
     print('粉丝:', fans)
 
-    if input('是否展示评论？（Y/N）') == 'Y':
+    if input('是否展示评论？（Y/Enter）') == 'Y':
         if input('请选择评论展示方式：按热度（H）/按时间（T）') == 'H': # 确定评论排序
             sort = '2'
         else:
@@ -148,12 +148,12 @@ def video(av_num):
                 if input('回车以查看下10个评论，输入exit退出评论:') == 'exit':
                     break
 
-    if input('是否要下载视频？') != '':
+    if input('是否要下载视频？(Y/Enter)') != '':
         if input('选择你的下载方式:直接下载（D）/获取直链链接（G）') == 'D':
             path = input('请输入完整路径和文件名:')
             # 使用you-get下载
             os.system('you-get ' + '-O ' + path + ' https://www.bilibili.com/video/av{}'.format(av_num))
-            print('下载成功')
+            input('下载成功')
         else:
             # 获取视频cid
             cid = re.findall('"cid":(.*?),',requests.get('https://api.bilibili.com/x/player/pagelist?aid={}'.format(av_num),headers=headers).text)[0]
@@ -161,6 +161,7 @@ def video(av_num):
             download_url = requests.get('http://www.xbeibeix.com/api/bilibiliapi.php?url=https://www.bilibili.com/&aid={}&cid={}'.format(av_num,cid))
             target_url = re.findall('"url": "(.*?)"', download_url.text)[0]
             print('直链:',target_url)
+
 
 def person(uid):
     head = {
@@ -211,8 +212,8 @@ def person(uid):
 
     print('————用户信息————')
     print('昵称:',name)
-    print('LV',level,end='')
-    if vip == '2': # 判断是否有大会员
+    print('LV',level,end=' ')
+    if vip == 1: # 判断是否有大会员
         print('大会员')
     else:
         print('')
@@ -232,8 +233,9 @@ def person(uid):
         exit()
 
     print('————置顶信息————')
-    print('标题:',title,' ',tname,' ',av_num)
+    print('标题:',title,' ',tname,' av',av_num)
     print('上传时间:',upload_time,made)
+    print('简介:')
     if '\n' not in introduction:
         for x in range(int(len(introduction) / 45) + 1):  # 45个字一行显示简介
             try:
@@ -246,8 +248,8 @@ def person(uid):
                 break
     else:
         print('     ' + introduction)
-
     print('浏览:',view,' 弹幕:',danmaku,' 评论',reply,' 赞:',like,' 踩',dislike,' 硬币',coin,' 收藏:',collect,' 分享:',share)
+    print('————————————————')
     if input('是否展示视频信息？（Y/N）') == 'Y':
         video_list = requests.get('http://space.bilibili.com/ajax/member/getSubmitVideos?mid={}&'.format(uid),headers = headers).text
         page = int(re.findall('"pages":(.*?)}', video_list)[-1]) # 获取页数
@@ -293,6 +295,7 @@ def person(uid):
             else:
                 print('     ' + video_introduction[z])
             print(video_view[z],'浏览',video_reply[z],'评论',video_danmaku[z],'弹幕',video_collect[z],'收藏')
+        input('运行结束，按回车退出')
 
 # 设置User-Agent
 headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ''Chrome/81.0.4044.43 Safari/537.36 Edg/81.0.416.28',
