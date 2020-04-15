@@ -1,0 +1,16 @@
+{
+    "resx": 1920,
+    "resy": 1080,
+    "scrolltime": 12.000000,
+    "fixtime": 5.000000,
+    "density": 0,
+    "fontname": "SimHei",
+    "fontsize": 42,
+    "opacity": 255,
+    "outline": 0,
+    "shadow": 1,
+    "displayarea": 1.000000,
+    "scrollarea": 1.000000,
+    "blockmode": [],
+    "statmode": []
+}
