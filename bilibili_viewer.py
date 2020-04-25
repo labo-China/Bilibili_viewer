@@ -77,17 +77,18 @@ class video:
             return {'response_code': self.response_code, 'return_code': self.return_code,
                     'name': '', 'cid': '', 'length': ''}
         # 获取分P数
-        video_part = self.main_data['data']['videos']
+        # video_part = self.main_data['data']['videos']
         video_part_name = [] # 分P名称
         video_part_cid = [] # 分P cid
         video_part_length = [] # 分P视频长度
         # 开始循环访问字典添加数据
-        for video_part_num in range(video_part):
-            video_part_name.append(self.main_data['data']['pages'][video_part_num]['part'])
-            video_part_cid.append(self.main_data['data']['pages'][video_part_num]['cid'])
+        for video_part in self.main_data['data']['pages']:
+            video_part_name.append(video_part['part'])
+            video_part_cid.append(video_part['cid'])
             # 处理时间戳
-            video_part_length.append(('{}:{}'.format(str((int(self.main_data['data']['pages'][video_part_num]['duration'] / 60))).zfill(2) ,
-                                               str(self.main_data['data']['pages'][video_part_num]['duration'] % 60).zfill(2))))
+            video_part_length.append(
+                ('{}:{}'.format(str((int(video_part['duration'] / 60))).zfill(2),
+                                str(video_part['duration'] % 60).zfill(2))))
         # 返回数据
         return {'response_code' : self.response_code, 'return_code' : self.return_code,
                 'name' : video_part_name, 'cid' : video_part_cid, 'length' :video_part_length}
@@ -107,11 +108,11 @@ class user:
         # 请求用户基础信息
         user_info = requests.get('https://api.bilibili.com/x/space/acc/info?mid={}&jsonp=jsonp'.format(self.user_uid),headers = self.headers)
         # 获取请求资源码
-        response_code = user_info.statu_code
+        response_code = user_info.status_code
         user_info = json.loads(user_info.text)
         # 获取网站返回码
         return_code = user_info['code']
-        if return_code == -404 or return_code == -403:  # 如果返回码错误，则返回空数据
+        if response_code != 200 or return_code != 0:  # 如果返回码错误，则返回空数据
             return {'response_code': response_code, 'return_code': return_code, 'name': '',
                     'sex': '', 'sign': '', 'level': '', 'birthday': '',
                     'offical': '', 'live_url': '', 'vip': '', 'fans_badge': ''}
@@ -125,20 +126,19 @@ class user:
         user_official = user_info['data']['official']['title']  # 认证
         user_vip = user_info['data']['vip']['status']  # 会员状态
         user_fans_badge = user_info['data']['fans_badge']  # 粉丝勋章状态
-        live_num = re.findall('<a href="//live.bilibili.com/(.*?)" target="_blank">', user_info)
         return {'response_code' : response_code, 'return_code' : return_code, 'name' : user_name,
                 'sex' : user_sex, 'sign' : user_sign, 'level' : user_level, 'birthday' : user_birthday,
-                'offical' : user_official,'live_num' : live_num, 'vip' : user_vip, 'fans_badge' : user_fans_badge}
+                'official' : user_official, 'vip' : user_vip, 'fans_badge' : user_fans_badge}
 
     def user_top_video(self):
         # 请求用户置顶视频
         top_video = requests.get('https://api.bilibili.com/x/space/top/arc?vmid={}'.format(self.user_uid),headers=self.headers)
         # 获取请求资源码
-        response_code = top_video.statu_code
+        response_code = top_video.status_code
         top_video = json.loads(top_video.text)
         # 获取网站返回码
         return_code  = top_video['code']
-        if return_code == 50306 or return_code == -400:  # 判断是否有置顶视频
+        if return_code != 0 or return_code != 0:  # 判断是否有置顶视频
             return {'response_code' : response_code, 'return_code' : return_code, 'aid': '', 'bvid': '', 'tname': '',
                     'copyrights': '', 'title': '', 'upload_time': '', 'introduction': '', 'view': '', 'danmaku': '',
                     'reply': '', 'like': '', 'dislike': '', 'coin': '', 'collect': '', 'share': ''}
@@ -167,24 +167,34 @@ class user:
                 'dislike' : top_video_dislike, 'coin' : top_video_coin, 'collect' : top_video_collect, 'share' : top_video_share}
 
     def user_video(self,pn):
-        # 获取用户视频列表并解码
-        video_data = json.loads(
-            requests.get('http://space.bilibili.com/ajax/member/getSubmitVideos?mid={}&pn={}'.format(self.user_uid, pn),
-                         headers=headers).content.decode('unicode_escape')).replace('\/','')
-        # 获取标题、评论、视频上传时间、弹幕、浏览、简介、视频长度、收藏、av号
-        user_video_title = re.findall('title:(.*?)', video_data)  # 标题
-        user_video_reply = re.findall('comment:(.*?)', video_data)  # 评论
-        user_video_upload_time = re.finall('created:(.*?)', video_data)  # 视频上传时间
-        user_video_danmaku = re.findall('video_review:(.*?)', video_data)  # 弹幕
-        user_video_view = re.findall('play:(.*?)', video_data)  # 浏览
-        user_video_introduction = re.findall('description:"(.*?)"', video_data)  # 简介
-        user_video_length = re.findall('length:(.*?)', video_data)  # 视频长度
-        user_video_collect = re.finall('favorites:(.*?)', video_data)  # 收藏
-        user_video_aid = re.findall('aid:(.*?)', video_data)  # 视频av号
+        user_video_title = []  # 标题
+        user_video_reply = []  # 评论
+        user_video_upload_time = []  # 视频上传时间
+        user_video_danmaku = []  # 弹幕
+        user_video_view = []  # 浏览
+        user_video_introduction = []  # 简介
+        user_video_length = []  # 视频长度
+        user_video_collect = []  # 收藏
+        user_video_aid = []  # 视频av号
+        # 获取用户视频列表
+        video_data = json.loads(requests.get('http://space.bilibili.com/ajax/member/getSubmitVideos?mid={}&page={}'.format(
+            self.user_uid, pn),headers=self.headers).text)
+        # 获取数据
+        user_video_pages = video_data['data']['pages']
+        for range_var in video_data['data']['vlist']:
+            user_video_title.append(range_var['title'])
+            user_video_reply.append(range_var['comment'])
+            user_video_upload_time.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(range_var['created'])))
+            user_video_danmaku.append(range_var['video_review'])
+            user_video_view.append(range_var['play'])
+            user_video_introduction.append(range_var['description'])
+            user_video_length.append(range_var['length'])
+            user_video_collect.append(range_var['favorites'])
+            user_video_aid.append(range_var['aid'])
         # 返回数据
         return {'title' : user_video_title, 'reply' : user_video_reply, 'upload_time' : user_video_upload_time,
                 'danmaku' : user_video_danmaku, 'view' : user_video_view, 'introduction' : user_video_introduction,
-                'length' : user_video_length, 'collect' : user_video_collect, 'aid' : user_video_aid}
+                'length' : user_video_length, 'collect' : user_video_collect, 'aid' : user_video_aid, 'pages' : user_video_pages}
 
 class reply:
     def __init__(self,types,num,pn,sort):
@@ -236,39 +246,35 @@ class reply:
         else:
             all_page = all_page / 20
         # 遍历字典，获得数据
-        for range_var0 in range(len(self.main_data['data']['replies'])):
-            reply_user_name.append(self.main_data['data']['replies'][range_var0]['member']['uname'])
-            reply_user_level.append(self.main_data['data']['replies'][range_var0]['member']['level_info']['current_level'])
-            reply_user_sex.append(self.main_data['data']['replies'][range_var0]['member']['sex'])
-            reply_user_official.append(self.main_data['data']['replies'][range_var0]['member']['official_verify']['desc'])
-            reply_like_num.append(self.main_data['data']['replies'][range_var0]['like'])
-            reply_reply_num.append(self.main_data['data']['replies'][range_var0]['rcount'])
-            reply_upload_time.append(self.main_data['data']['replies'][range_var0]['ctime'])
-            reply_content.append(self.main_data['data']['replies'][range_var0]['content']['message'])
+        for range_var0 in self.main_data['data']['replies']:
+            reply_user_name.append(range_var0['member']['uname'])
+            reply_user_level.append(range_var0['member']['level_info']['current_level'])
+            reply_user_sex.append(range_var0['member']['sex'])
+            reply_user_official.append(range_var0['member']['official_verify']['desc'])
+            reply_like_num.append(range_var0['like'])
+            reply_reply_num.append(range_var0['rcount'])
+            reply_upload_time.append(range_var0['ctime'])
+            reply_content.append(range_var0['content']['message'])
             for range_var1 in range(len(reply_content)):
                 reply_content[range_var1] = reply_content[range_var1].replace('\r', '')
-            reply_up_like.append(self.main_data['data']['replies'][range_var0]['up_action']['like'])
-            reply_up_reply.append(self.main_data['data']['replies'][range_var0]['up_action']['reply'])
+            reply_up_like.append(range_var0['up_action']['like'])
+            reply_up_reply.append(range_var0['up_action']['reply'])
             is_double_reply.append(0)
-            if not self.main_data['data']['replies'][range_var0]['replies'] is None:
+            if not range_var0['replies'] is None:
                 # 获取评论回复
-                if len(self.main_data['data']['replies'][range_var0]['replies']) >= 3:
-                    add_reply_num = 3
-                else:
-                    add_reply_num = len(self.main_data['data']['replies'][range_var0]['replies'])
-                for range_var2 in range(add_reply_num):
-                    reply_user_name.append(self.main_data['data']['replies'][range_var0]['replies'][range_var2]['member']['uname'])
-                    reply_user_level.append(self.main_data['data']['replies'][range_var0]['replies'][range_var2]['member']['level_info']['current_level'])
-                    reply_user_sex.append(self.main_data['data']['replies'][range_var0]['replies'][range_var2]['member']['sex'])
-                    reply_user_official.append(self.main_data['data']['replies'][range_var0]['replies'][range_var2]['member']['official_verify']['desc'])
-                    reply_like_num.append(self.main_data['data']['replies'][range_var0]['replies'][range_var2]['like'])
-                    reply_reply_num.append(self.main_data['data']['replies'][range_var0]['replies'][range_var2]['rcount'])
-                    reply_upload_time.append(self.main_data['data']['replies'][range_var0]['replies'][range_var2]['ctime'])
-                    reply_content.append(self.main_data['data']['replies'][range_var0]['replies'][range_var2]['content']['message'])
+                for range_var2 in range_var0['replies']:
+                    reply_user_name.append(range_var2['member']['uname'])
+                    reply_user_level.append(range_var2['member']['level_info']['current_level'])
+                    reply_user_sex.append(range_var2['member']['sex'])
+                    reply_user_official.append(range_var2['member']['official_verify']['desc'])
+                    reply_like_num.append(range_var2['like'])
+                    reply_reply_num.append(range_var2['rcount'])
+                    reply_upload_time.append(range_var2['ctime'])
+                    reply_content.append(range_var2['content']['message'])
                     for range_var1 in range(len(reply_content)):
                         reply_content[range_var1] = reply_content[range_var1].replace('\r', '')
-                    reply_up_like.append(self.main_data['data']['replies'][range_var0]['replies'][range_var2 - 1]['up_action']['like'])
-                    reply_up_reply.append(self.main_data['data']['replies'][range_var0]['replies'][range_var2 - 1]['up_action']['reply'])
+                    reply_up_like.append(range_var2['up_action']['like'])
+                    reply_up_reply.append(range_var2['up_action']['reply'])
                     is_double_reply.append(1)
         # 返回数据
         return{'response_code' : self.response_code, 'return_code' : self.return_code, 'type' : self.types,
@@ -278,7 +284,7 @@ class reply:
                'up_like' : reply_up_like, 'up_reply' : reply_up_reply, 'is_double_reply' : is_double_reply}
 
 class search:
-    def __init__(self,search_word,search_type = 'all'):
+    def __init__(self,search_word,search_type='all'):
         # 定义请求头
         self.headers = {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ''Chrome/81.0.4044.43 Safari/537.36 Edg/81.0.416.28',
@@ -572,6 +578,7 @@ class viewer:
                     print('')
                 except IndexError:
                     break
+        print('')
         # 获取并打印视频数据
         video_data = video_response.video_data()
         if video_data['response_code'] != 200 or video_data['return_code'] != 0:
@@ -635,9 +642,9 @@ class viewer:
                             print('')
                         print('     ' * replys['is_double_reply'][range_var2], replys['like'][range_var2], '赞', replys['reply'][range_var2], '评论')
                         # 判断UP主是否与评论有互动
-                        if replys['up_like'][range_var2] == 'True':
+                        if replys['up_like'][range_var2]:
                             print('     ' * replys['is_double_reply'][range_var2], 'UP主赞了')
-                        if replys['up_reply'][range_var2] == 'False':
+                        if replys['up_reply'][range_var2]:
                             print('     ' * replys['is_double_reply'][range_var2], 'UP主回复了')
                         print('     ' * replys['is_double_reply'][range_var2], '————————————————————————')
                     choice = input('回车以查看下一页评论，输入exit退出评论:')
@@ -688,6 +695,91 @@ class viewer:
 
         input('程序运行完毕，按Enter退出...')
 
+    def view_user(self):
+        user_response = user(self.num)
+        user_info = user_response.user_info()
+        if user_info['response_code'] != 200 or user_info['return_code'] != 0:
+            print('网络连接错误或无此用户')
+            exit(0)
+        print(user_info['name'], end=' ')
+        if user_info['sex'] != '保密':
+            print(user_info['sex'], end=' ')
+        print('LV', user_info['level'], end=' ')
+        if user_info['vip'] == 1:
+            print('大会员')
+        else:
+            print('')
+        if user_info['official'] != '':
+            print('Bilibili认证', user_info['official'])
+        if user_info['fans_badge']:
+            print('开通了粉丝勋章')
+        if user_info['birthday'] != '':
+            print('生日:', user_info['birthday'])
+        print('个性签名:', user_info['sign'])
+
+        user_top_video = user_response.user_top_video()
+        if user_top_video['response_code'] != 200 or user_top_video['return_code'] != 0:
+            print('当前用户暂无置顶视频')
+        else:
+            print('——————置顶视频——————')
+            print(user_top_video['copyrights'], user_top_video['tname'], user_top_video['title'])
+            print('av' + str(user_top_video['aid']) + '/' + user_top_video['bvid'], user_top_video['upload_time'])
+            introduction = user_top_video['introduction'].split('\n')
+            print('简介:', end='')
+            for range_var0 in introduction:
+                for range_var1 in range(int(len(range_var0) / 55) + 1):  # 45个字一行显示评论
+                    try:
+                        for local in range(55):
+                            print(range_var0[local + (55 * range_var1)], end = '')
+                        print('')
+                    except IndexError:
+                        break
+            print('')
+            print(user_top_video['view'], '浏览', user_top_video['danmaku'], '弹幕', user_top_video['like'], '点赞',
+                  user_top_video['reply'], '评论', user_top_video['coin'], '硬币', user_top_video['collect'], '收藏', user_top_video['share'], '分享')
+            print('————————————————')
+
+        choice = input('是否查看用户视频列表(Y/Enter)?')
+        if choice == 'Y' or choice == 'y':
+            pn = 1
+            while True:
+                user_video_list = user_response.user_video(pn)
+                pages = user_video_list['pages']
+                if pn > pages:
+                    break
+                user_video_title = user_video_list['title']
+                user_video_reply = user_video_list['reply']
+                user_video_upload_time = user_video_list['upload_time']
+                user_video_danmaku = user_video_list['danmaku']
+                user_video_view = user_video_list['view']
+                user_video_introduction = user_video_list['introduction']
+                user_video_length = user_video_list['length']
+                user_video_collect = user_video_list['collect']
+                user_video_aid = user_video_list['aid']
+                for range_var2 in range(20):
+                    try:
+                        print(user_video_title[range_var2])
+                        print('av' + str(user_video_aid[range_var2]), user_video_upload_time[range_var2], '时长:', user_video_length[range_var2])
+                        introduction = user_video_introduction[range_var2].split('\r\n')
+                        print('简介:')
+                        for range_var3 in introduction:
+                            for range_var4 in range(int(len(range_var3) / 55) + 1):  # 45个字一行显示评论
+                                try:
+                                    print('     ', end='')
+                                    for local in range(55):
+                                        print(range_var3[local + (55 * range_var4)], end = '')
+                                except IndexError:
+                                    print('')
+                                    break
+                        print(user_video_view[range_var2], '浏览', user_video_danmaku[range_var2], '弹幕',
+                              user_video_reply[range_var2], '评论', user_video_collect[range_var2], '收藏')
+                        print('————————————————')
+                    except IndexError:
+                        break
+                pn += 1
+                if input('是否查看下一页?(Enter/exit)') == 'exit':
+                    break
+
 class tool:
     def __init__(self):
         # av2bv bv2av
@@ -708,7 +800,7 @@ class tool:
         return ''.join(r)
 
 if __name__ == '__main__':
-    item = input('输入你要爬取信息的号码（用户uid/视频av/文章cv）,示例：uid:439067826:').split(':')
+    item = input('输入你要爬取信息的特征码（uid/av/bv/cv）,示例：uid:439067826:').split(':')
     # 按照信息前缀判断信息类型
     if item[0] == 'av':
         run = viewer('aid',item[1])
@@ -717,8 +809,8 @@ if __name__ == '__main__':
         run = viewer('bvid', item[1])
         run.view_video()
     elif item[0] == 'uid':
-        # person1(item[1])
-        pass
+        run = viewer('uid', item[1])
+        run.view_user()
     elif item[0] == 'cv':
         # pessage(item[1])
         pass
