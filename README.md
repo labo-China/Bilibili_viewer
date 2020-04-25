@@ -1,29 +1,30 @@
-# data
-项目简介
-Bilibili_Viewer是在python爬虫的基础上对B站其他客户端的功能进行模拟，尽量还原网页端和手机客户端的优点，后续准备接入GUI，打造成一个Bilibili微客户端。
+# Bilibili_viewer
+## 项目简介
+**Bilibili_Viewer**是在python爬虫的基础上对B站其他客户端的功能进行模拟，尽量还原网页端和手机客户端的优点，后续准备接入GUI，打造成一个Bilibili微客户端。
 
-作者简介
+## 作者简介
 一个六年级小学生，有意向一起开发的小伙伴可以私信B站@la博。
 
-项目特性
-不支持命令行直接调用
+## 运行要求
+    python3.4+
+    库: re，time，requests，json，os
 
-运行要求
-python3.4+
-库: re，time，requests，json，os
-
-已知BUG/改进点：
+## 已知BUG/改进点：
 	不支持获取直播间
 	不支持获取文章详细信息
-	不支持在程序内播放
 	不支持GUI
 	转换较多弹幕时播放可能出现乱码（可能是软件问题）
 
-版本更新：
+## 版本更新：
 
+    1.5 Beta 2 2020/4/25
+    添加对用户的查看支持
+    优化部分for循环
+    修复评论的UP主互动无法显示的问题
+    
 	1.5 Beta 1 2020/4/15
 	重写所有代码，使用类封装，可被调用
-	更换弹幕转换软件为DanmakuFactory(https://github.com/HITIKM/DanmakuFactory)
+	更换弹幕转换软件为[DanmakuFactory](https://github.com/HITIKM/DanmakuFactory)
 	使用内置下载器，无需you-get
 	新增把弹幕打入视频中的功能
 	在视频下载时可以选择清晰度
