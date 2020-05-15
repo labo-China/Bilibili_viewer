@@ -1,6 +1,6 @@
 import requests
 import json
-
+from Plugin.tool import tool
 class reply:
     def __init__(self,types,num,pn,sort):
         # 定义请求头
@@ -17,8 +17,7 @@ class reply:
         if types == 'aid':
             self.main_data = requests.get('http://api.bilibili.com/x/v2/reply?jsonp=jsonp&pn={}&type=1&sort={}&oid={}'.format(pn, sort, num),headers=self.headers)
         elif types == 'bvid':
-            tools = tool()
-            self.num = tools.bv2av('BV' + self.num)
+            self.num = tool.bv2av('BV' + self.num)
             self.main_data = requests.get('http://api.bilibili.com/x/v2/reply?jsonp=jsonp&pn={}&type=1&sort={}&oid={}'.format(pn, sort, self.num, headers=self.headers))
         # 获取请求资源码
         self.response_code = self.main_data.status_code
@@ -87,21 +86,3 @@ class reply:
                'user_level' : reply_user_level, 'user_sex' : reply_user_sex, 'user_official' : reply_user_official,
                'like' : reply_like_num, 'reply' : reply_reply_num, 'content' : reply_content, 'upload_time' : reply_upload_time,
                'up_like' : reply_up_like, 'up_reply' : reply_up_reply, 'is_double_reply' : is_double_reply}
-class tool:
-    def __init__(self):
-        # av2bv bv2av
-        self.alphabet = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
-
-    def bv2av(self,x):
-        r = 0
-        for i, v in enumerate([11, 10, 3, 8, 4, 6]):
-            r += self.alphabet.find(x[v]) * 58 ** i
-        return (r - 0x2_0840_07c0) ^ 0x0a93_b324
-
-    def av2bv(self,x):
-        x = (x ^ 0x0a93_b324) + 0x2_0840_07c0
-        r = list('BV1**4*1*7**')
-        for v in [11, 10, 3, 8, 4, 6]:
-            x, d = divmod(x, 58)
-            r[v] = self.alphabet[d]
-        return ''.join(r)

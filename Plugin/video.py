@@ -1,7 +1,6 @@
 import requests
 import json
 import time
-
 class video:
     def __init__(self,code,num):
         # 定义请求头
@@ -36,10 +35,10 @@ class video:
         if video_zone_name == '':
             video_zone_name = '未知'
         # 格式化Unix时间戳为正常时间
-        video_upload_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.main_data['data']['pubdate']))  # 上传时间
+        video_upload_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.main_data['data']['pubdate']))  # 上传时间
         # 返回结果
         return {'response_code' : self.response_code, 'return_code' : self.return_code, 'aid' : video_aid,
-                'bvid': video_bvid, 'owner': video_owner, 'title': video_title, 'zone_name': video_zone_name,
+                'bvid': video_bvid, 'owner': video_owner, 'title': video_title, 'tname': video_zone_name,
                 'copyrights': video_copyrights, 'upload_time': video_upload_time}
 
     def introduction(self):
