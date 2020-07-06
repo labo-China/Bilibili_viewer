@@ -1,90 +1,59 @@
 import requests
 import json
 import time
+from Plugin.tool import *
+
+
 class video:
-    def __init__(self,code,num):
-        # 定义请求头
-        self.headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) ''Chrome/81.0.4044.43 Safari/537.36 Edg/81.0.416.28',
-           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
-           'Accept-Encoding': 'gzip, deflate, br',
-           'Accept-Language': 'zh-CN,zh;q = 0.9'}
+    """Get Bilibili video"""
+
+    def __init__(self, code, num):
         # 获取视频全部信息
-        self.main_data = requests.get('https://api.bilibili.com/x/web-interface/view?{}={}'.format(code, num),headers=self.headers)
+        self.MainData = requests.get(f'https://api.bilibili.com/x/web-interface/view?{code}={num}')
         # 获取请求资源码
-        self.response_code = self.main_data.status_code
-        self.main_data = json.loads(self.main_data.text)
+        self.response_code = self.MainData.status_code
+        self.MainData = json.loads(self.MainData.text)
         # 获取网站返回码
-        self.return_code = self.main_data['code']
+        self.return_code = self.MainData['code']
 
-    def video_info(self):
-        if self.return_code == -404 or self.return_code == -400 or self.return_code == 62002:
-            return {'response_code': self.response_code, 'return_code': self.return_code, 'aid': '',
-                    'bvid': '', 'owner': '', 'title': '', 'zone_name': '', 'copyrights': '', 'upload_time': ''}
-        # 获取av，bv号
-        video_aid = self.main_data['data']['aid'] # av号
-        video_bvid = self.main_data['data']['bvid'] # bv号
-        # 获取UP主名字，标题，视频分区
-        video_owner = self.main_data['data']['owner']['name']  # 名字
-        video_title = self.main_data['data']['title']  # 标题
-        video_zone_name = self.main_data['data']['tname']  # 分区
-        if self.main_data['data']['copyright'] == 1:  # 视频版权
-            video_copyrights = '自制'
-        else:
-            video_copyrights = '转载'
-        # 如果视频分区为空就返回未知
-        if video_zone_name == '':
-            video_zone_name = '未知'
-        # 格式化Unix时间戳为正常时间
-        video_upload_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.main_data['data']['pubdate']))  # 上传时间
-        # 返回结果
-        return {'response_code' : self.response_code, 'return_code' : self.return_code, 'aid' : video_aid,
-                'bvid': video_bvid, 'owner': video_owner, 'title': video_title, 'tname': video_zone_name,
-                'copyrights': video_copyrights, 'upload_time': video_upload_time}
+    def video_info(self) -> dict:
+        """Return video info"""
+        if self.return_code != 0 or self.response_code != 200:
+            return {'response_code': self.response_code, 'return_code': self.return_code}
+        VideoInfoDict = {'aid': 'aid', 'bvid': 'bvid', 'title': 'title', 'tname': 'tname',
+                         'copyrights': 'copyright', 'upload_time': 'pubdate', 'owner': ['owner', 'name']}
+        Data = extractor(data = self.MainData['data'], dicts = VideoInfoDict)
+        Data['copyrights'] = '自制' if Data['copyrights'] == 1 else '转载'
+        Data['upload_time'] = format_time(Data['upload_time'])
+        return {'response_code': self.response_code, 'return_code': self.return_code, **Data}
 
-    def introduction(self):
-        if self.return_code == -404 or self.return_code == -400 or self.return_code == 62002:
-            return {'response_code' : self.response_code, 'return_code' : self.return_code, 'introduction' : ''}
+    def introduction(self) -> dict:
+        """Return video introduction"""
+        if self.return_code != 0 or self.response_code != 200:
+            return {'response_code': self.response_code, 'return_code': self.return_code}
         # 获取简介
-        video_introduction = self.main_data['data']['desc'].strip('\r')
+        VideoIntroduction = self.MainData['data']['desc'].strip('\r')
         # 返回结果
-        return {'response_code' : self.response_code, 'return_code' : self.return_code, 'introduction' : video_introduction}
+        return {'response_code': self.response_code, 'return_code': self.return_code,
+                'introduction': VideoIntroduction}
 
-    def video_data(self):
-        if self.return_code == -404 or self.return_code == -400 or self.return_code == 62002:
-            return {'response_code': self.response_code, 'return_code': self.return_code, 'view': '',
-                    'danmaku': '', 'like': '', 'dislike': '', 'reply': '',
-                    'coin': '', 'collect': '', 'share': ''}
-        # 获取浏览，弹幕，评论，点赞，踩，硬币，收藏，分享
-        video_view = self.main_data['data']['stat']['view']  # 浏览
-        video_danmaku = self.main_data['data']['stat']['danmaku']  # 弹幕
-        video_reply = self.main_data['data']['stat']['reply']  # 评论
-        video_like = self.main_data['data']['stat']['like']  # 点赞
-        video_dislike = self.main_data['data']['stat']['dislike']  # 踩
-        video_coin = self.main_data['data']['stat']['coin']  # 硬币
-        video_collect = self.main_data['data']['stat']['favorite']  # 收藏
-        video_share = self.main_data['data']['stat']['share']  # 分享
-        # 返回结果
-        return {'response_code' : self.response_code, 'return_code' : self.return_code, 'view' : video_view,
-                'danmaku' : video_danmaku, 'like' : video_like, 'dislike' : video_dislike, 'reply' : video_reply,
-                'coin' : video_coin, 'collect' : video_collect, 'share' : video_share}
+    def video_data(self) -> dict:
+        """Return video data"""
+        if self.return_code != 0 or self.response_code != 200:
+            return {'response_code': self.response_code, 'return_code': self.return_code}
+        VideoDataDict = {'view': 'view', 'danmaku': 'danmaku', 'like': 'like', 'dislike': 'dislike',
+                         'reply': 'reply', 'coin': 'coin', 'collect': 'favorite', 'share': 'share'}
+        return {'response_code': self.response_code, 'return_code': self.return_code,
+                **extractor(data = self.MainData['data']['stat'], dicts = VideoDataDict)}
 
-    def video_part(self):
-        if self.return_code == -404 or self.return_code == -400 or self.return_code == 62002:
-            return {'response_code': self.response_code, 'return_code': self.return_code,
-                    'name': '', 'cid': '', 'length': ''}
-        # 获取分P数
-        # video_part = self.main_data['data']['videos']
-        video_part_name = [] # 分P名称
-        video_part_cid = [] # 分P cid
-        video_part_length = [] # 分P视频长度
-        # 开始循环访问字典添加数据
-        for video_part in self.main_data['data']['pages']:
-            video_part_name.append(video_part['part'])
-            video_part_cid.append(video_part['cid'])
-            # 处理时间戳
-            video_part_length.append(
-                ('{}:{}'.format(str((int(video_part['duration'] / 60))).zfill(2),
-                                str(video_part['duration'] % 60).zfill(2))))
-        # 返回数据
-        return {'response_code' : self.response_code, 'return_code' : self.return_code,
-                'name' : video_part_name, 'cid' : video_part_cid, 'length' :video_part_length}
+    def video_part(self) -> dict:
+        if self.return_code != 0 or self.response_code != 200:
+            return {'response_code': self.response_code, 'return_code': self.return_code}
+        PartDict = {'name': 'part', 'cid': 'cid', 'length': 'duration'}
+        PartList = []
+        for Index in self.MainData['data']['pages']:
+            Part = extractor(Index, PartDict)
+            Part['length'] = TickToMinute(Part['length'])
+            PartList.append(Part)
+        return {'response_code': self.response_code, 'return_code': self.return_code, 'part': PartList}
+    
