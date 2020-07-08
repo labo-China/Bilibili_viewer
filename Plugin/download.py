@@ -9,17 +9,14 @@ class download:
     def __init__(self, save_path, code, num):
         # 定义请求头
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko',
-            'Connection': 'keep-alive'}
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko'}
         self.save_path = save_path.replace('/', '\\')
         if code == 'aid':
             self.zipname = 'av'
             self.basicname = 'aid'
-            self.fullname = 'avid'
         elif code == 'bvid':
             self.zipname = 'bv'
             self.basicname = 'bvid'
-            self.fullname = 'bvid'
         self.num = num
 
     def get_video_download_urls(self, part, quality = 80):
@@ -72,8 +69,7 @@ class download:
     def xml2ass(self, filename = 'danmaku'):
         """使用DanmakuFactory将弹幕XML文件转换为字幕ASS文件"""
         if '<d p=' not in open(self.save_path + 'danmaku.xml', encoding = 'utf-8').read():
-            print('此弹幕文件无弹幕，正在创建空文件...')
-            open(self.save_path + filename + '.ass', 'w').close()
+            print('此弹幕文件无弹幕,跳过...')
             return
         filename = filename.replace('/', '\\\\')
         os.system(f'DanmakuFactory\\DanmakuFactory.exe -i "{self.save_path}danmaku.xml" -o '
@@ -88,16 +84,6 @@ class download:
                 file.write(f'file \'{self.save_path + filename}\'\n')
         # 使用FFmpeg读取filelist.txt并合并其中的文件
         os.system(f'ffmpeg.exe -f concat -safe 0 -i {self.save_path}filelist.txt -c copy "{self.save_path}{output}"')
-
-    def flush_ass_to_video(self, filename):
-        # 获取合成后的文件分辨率并写入quality.txt
-        os.system(r'ffmpeg.exe -i {}full.flv 2> {}quality.txt'.format(self.save_path, self.save_path))
-        # 获取视频分辨率
-        quality = re.findall(r'(\d*x\d*)', open(self.save_path + 'quality.txt').read())[0]
-        print('正在冲入ASS字幕...')
-        # 使用ffmpeg将ass字幕打入视频流中
-        os.system(r'/ffmpeg.exe -i {}full.flv -i {}danmaku.ass -vf ass=\'{}danmaku.ass\' -strict -2 -s {}.flv'.format(
-            self.save_path, self.save_path, self.save_path, (quality + ' "' + self.save_path + filename)))
 
     def del_file(self):
         part = 1

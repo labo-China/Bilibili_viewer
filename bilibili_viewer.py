@@ -78,6 +78,12 @@ class shower:
 
     @staticmethod
     def TryPrint(*args, change_line: bool = True, other: str = None) -> None:
+        """
+        如果args里的值全为真就打印args\n
+        :param args: 要检测真伪的值
+        :param change_line: 在结尾是否输出\n
+        :param other: 如果不打印args时要打印的字符串
+        """
         for arg in args:
             if not bool(arg):
                 if other is not None:
@@ -159,20 +165,14 @@ class viewer:
             Quality = input('请输入所需清晰度(1080/720/480/360):')
             Quality = QualityDict[Quality] if Quality in QualityDict.keys() else 80
             Path = input('输入视频和弹幕的保存路径，例:E:/video:')
-            DownloadType = input('请选择弹幕下载方式:\n1,下载为ASS字幕(推荐)\n2,强行嵌入视频中')
             VideoDownload = download(Path, self.code, self.num)
             for DownloadIndex in range(len(Part['part'])):
                 Url = VideoDownload.get_video_download_urls(DownloadIndex, Quality)
                 DownloadPartName = VideoDownload.video_downloader(Url['url'], Url['referer'])
                 VideoDownload.danmaku_downloader(Url['cid'])
-                if DownloadType == '2':
-                    VideoDownload.merge_video_part(inputs = DownloadPartName['filename'], output = 'full.flv')
-                    VideoDownload.xml2ass()
-                    VideoDownload.flush_ass_to_video(FileName[DownloadIndex])
-                else:
-                    VideoDownload.merge_video_part(inputs = DownloadPartName['filename'],
-                                                   output = FileName[DownloadIndex].replace('/', '-') + '.flv')
-                    VideoDownload.xml2ass(FileName[DownloadIndex].replace('/', '-'))
+                VideoDownload.merge_video_part(inputs = DownloadPartName['filename'],
+                                               output = FileName[DownloadIndex].replace('/', '-') + '.flv')
+                VideoDownload.xml2ass(FileName[DownloadIndex].replace('/', '-'))
                 VideoDownload.del_file()
         return
 
