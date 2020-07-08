@@ -2,12 +2,12 @@
 ## 版本更新进度
 
 | 版本号 | 更新信息 | 更新种类 | 更新难度 | 发布日期 |
-|  :----:  | :----: | :----: | :----: | :----: |
-| 1.0 | 原始版本,支持查询av号,uid | —— | 2 | 2020/3/16 | 
-| 1.3 | 新增查看用户稿件信息 末尾的print更改为input，避免命令行端退出过快 完善异常处理，避免报错 | Feature | 2 | 2020/3/17 |
-| 1.4 | 支持查看视频分P 可下载视频和弹幕并将弹幕自动转换为字幕文件 支持简单查看文章的正文（cv） 修改选择环节时的判断| Feature | 3 |2020/3/23|
-| 1.5 Beta 1 | 重写代码 更换弹幕转换软件 使用内置下载器 可把弹幕打入视频中 下载时可以选择清晰度 添加对BV号的支持| Feature | 5 |2020/4/15|
-| 1.5 Beta 2 | 重新添加用户的支持 语法优化 修复评论的UP主互动无法显示的问题 | Fix | 2 | 2020/4/25 |
-| 1.5 Beta 3 | 优化程序架构 优化爬取内容展现方式 使用api进行搜索 语法优化 | Fix | 1 | 2020/5/15 |
-| 1.6 | 大量语法优化 优化用户交互 去除无用请求头 编写番剧相关API | Fix | 3 | 2020/7/5 |
-| **1.6.1** | 添加对番剧的完整支持 使用多线程下载文件 补全搜索类型 | Feature | 2 | 制作中 |
+|  :----:  | :----: | :----: | :---: | :----: |
+| 1.0 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.4) | —— | 2 | 2020/3/16 | 
+| 1.3 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.4) | Feature | 2 | 2020/3/17 |
+| 1.4 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.4)| Feature | 3 |2020/3/23|
+| 1.5-Beta-1 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.5-beta.1) | Feature | 5 |2020/4/15|
+| 1.5-Beta-2 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.5-beta.2) | Fix | 2 | 2020/4/25 |
+| 1.5-Beta-3 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.5-beta.3) | Fix | 1 | 2020/5/15 |
+| 1.5 | [Update Detail](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.5) | Fix | 3 | 2020/7/8 |
+| **1.6.1** | 添加对番剧、文章的完整支持 补全搜索类型 | Feature | 2 | 制作中 |
