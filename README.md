@@ -14,18 +14,19 @@
 	不支持获取文章详细信息
 	不支持GUI
 	不支持下载图片
-	不支持访问番剧，纪录片
+	不支持访问，纪录片
 
-## 文件说明：
+## 版本更新进度
 
-| 文件名 | 是否必需 | 作用 | 文件大小 |
-|  :----:  | :---: | :---: | :----: |
-| DanmakuFactory | 否 | 弹幕转换工具 | 416KB |
-| Plugin  | 是 | Bilibili_viewer插件| 72KB |
-| bilibili_viewer.py | 是 | Bilibili_viewer主程序 | 16KB |
-| FFmpeg.7z | 否 | 视频合并&弹幕混流(需解压) | 15.6MB |
-| README.md | 是 | 项目说明文件 | 3KB |
+| 版本号 | 更新信息 | 更新种类 | 更新难度 | 发布日期 |
+|  :----:  | :----: | :----: | :---: | :----: |
+| 1.0 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.4) | —— | 2 | 2020/3/16 | 
+| 1.3 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.4) | Feature | 2 | 2020/3/17 |
+| 1.4 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.4)| Feature | 3 |2020/3/23|
+| 1.5-Beta-1 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.5-beta.1) | Feature | 5 |2020/4/15|
+| 1.5-Beta-2 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.5-beta.2) | Fix | 2 | 2020/4/25 |
+| 1.5-Beta-3 | [Update Detail...](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.5-beta.3) | Fix | 1 | 2020/5/15 |
+| 1.5 | [Update Detail](https://github.com/labo-China/Bilibili_viewer/releases/tag/v1.5) | Fix | 3 | 2020/7/8 |
+| **1.6.1** | 添加对番剧、文章的完整支持 补全搜索类型 | Feature | 2 | 制作中 |
 
-    
-    
     
