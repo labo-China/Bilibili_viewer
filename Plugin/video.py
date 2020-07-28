@@ -1,7 +1,8 @@
+# -*- coding: UTF-8 -*-
 import requests
 import json
 import time
-from Plugin.tool import *
+from Plugin.tool import extractor, format_time, TickToMinute, av2bv
 
 
 class video:
@@ -10,6 +11,8 @@ class video:
     def __init__(self, code, num):
         # 获取视频全部信息
         self.MainData = requests.get(f'https://api.bilibili.com/x/web-interface/view?{code}={num}')
+        self.code = code
+        self.num = num
         # 获取请求资源码
         self.response_code = self.MainData.status_code
         self.MainData = json.loads(self.MainData.text)
@@ -20,10 +23,10 @@ class video:
         """Return video info"""
         if self.return_code != 0 or self.response_code != 200:
             return {'response_code': self.response_code, 'return_code': self.return_code}
-        VideoInfoDict = {'aid': 'aid', 'bvid': 'bvid', 'title': 'title', 'tname': 'tname',
-                         'copyrights': 'copyright', 'upload_time': 'pubdate', 'owner': ['owner', 'name']}
-        Data = extractor(data = self.MainData['data'], dicts = VideoInfoDict)
-        Data['copyrights'] = '自制' if Data['copyrights'] == 1 else '转载'
+        VideoInfoDict = {'upload_time': 'pubdate', 'owner': ['owner', 'name']}
+        VideoInfoList = ['aid', 'bvid', 'title', 'tname', 'copyright']
+        Data = extractor(data = self.MainData['data'], dicts = VideoInfoDict, copy_list = VideoInfoList)
+        Data['copyright'] = '自制' if Data['copyright'] == 1 else '转载'
         Data['upload_time'] = format_time(Data['upload_time'])
         return {'response_code': self.response_code, 'return_code': self.return_code, **Data}
 
@@ -56,4 +59,50 @@ class video:
             Part['length'] = TickToMinute(Part['length'])
             PartList.append(Part)
         return {'response_code': self.response_code, 'return_code': self.return_code, 'part': PartList}
-    
+
+    def get_replies(self, sort, pn) -> dict:
+        num = bv2av('BV' + self.num) if self.code == 'bvid' else self.num
+        Data = requests.get(f'http://api.bilibili.com/x/v2/reply?pn={pn}&type=1&sort={sort}&oid={num}')
+        JsonData = json.loads(Data.text)
+        all_page = int(JsonData['data']['page']['count'])
+        all_page = all_page / 20 if all_page / 20 == int(all_page / 20) else int(all_page / 20) + 1
+
+        ReplyList = []
+        ReplyDict = {'name': ['member', 'uname'], 'level': ['member', 'level_info', 'current_level'],
+                     'sex': ['member', 'sex'], 'official': ['member', 'official_verify', 'desc'],
+                     'like': 'like', 'reply': 'rcount', 'upload_time': 'ctime', 'content': ['content', 'message'],
+                     'up_like': ['up_action', 'like'], 'up_reply': ['up_action', 'reply']}
+        for Replies in JsonData['data']['replies']:
+            ReplyList.append({**extractor(data = Replies, dicts = ReplyDict), 'replies': []})
+            if Replies['replies']:
+                for ChildReplies in Replies['replies']:
+                    ReplyList[len(ReplyList) - 1]['replies'].append(
+                        {**extractor(data = ChildReplies, dicts = ReplyDict), 'replies': []})
+        return {'response_code': Data.status_code, 'return_code': JsonData['code'],
+                'replies': ReplyList, 'all_page': all_page}
+
+    def get_tags(self) -> dict:
+        Data = requests.get(f'https://api.bilibili.com/x/web-interface/view/detail/tag?{self.code}={self.num}')
+        JsonData = json.loads(Data.text)
+        TagList = []
+        TagDict = {'upload_time': 'ctime', 'dislike': 'hates', 'like': 'likes', 'content': 'short_content',
+                   'follower': 'subscribed_count', 'tag_id': 'tag_id', 'name': 'tag_name', 'type': 'tag_type'}
+        for tags in JsonData['data']:
+            TagList.append(extractor(data = tags, dicts = TagDict))
+        return {'response_code': Data.status_code, 'return_code': JsonData['code'], 'tag_list': TagList}
+
+    def get_questions(self, edge_id: int = None) -> dict:
+        num = 'BV' + self.num if self.code == 'bvid' else self.num
+        Url = f'https://api.bilibili.com/x/stein/edgeinfo_v2?{self.code}={num}&graph_version=303884' +\
+              (f'&edge_id={edge_id}' if edge_id else '')
+        Data = requests.get(Url)
+        JsonData = json.loads(Data.text)
+        QuestionList = []
+
+        QuestionDict = {'cid': 'cid', 'edge_id': 'id', 'is_default': 'is_default', 'content': 'option'}
+        for Questions in JsonData['data']['edges']['questions']:
+            ChoiceList = []
+            for Choices in Questions['choices']:
+                ChoiceList.append(extractor(data = Choices, dicts = QuestionDict))
+            QuestionList.append(ChoiceList)
+        return {'response_code': Data.status_code, 'return_code': JsonData['code'], 'question_list': QuestionList}
