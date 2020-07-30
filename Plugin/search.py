@@ -1,5 +1,5 @@
-from Plugin.tool import *
-import time
+# -*- coding: UTF-8 -*-
+from Plugin.tool import format_time, replace_for_web, replace_for_highlight
 import requests
 import json
 import re
@@ -64,9 +64,8 @@ class new_search:
             for top_videos in range_var['res']:
                 top_video = {'aid': top_videos['aid'], 'bvid': top_videos['bvid'], 'title': top_videos['title'],
                              'coin': top_videos['coin'], 'introduction': top_videos['desc'],
-                             'collect': top_videos['fav'],
-                             'length': top_videos['duration'], 'view': top_videos['play'], 'danmaku': top_videos['dm'],
-                             'upload_time': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(top_videos['pubdate']))}
+                             'collect': top_videos['fav'], 'length': top_videos['duration'], 'view': top_videos['play'],
+                             'danmaku': top_videos['dm'], 'upload_time': format_time(top_videos['pubdate'])}
                 user_data['top_video'].append(top_video)
             return_data.append(user_data)
         return return_data
