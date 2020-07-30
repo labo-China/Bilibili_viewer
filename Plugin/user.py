@@ -1,4 +1,5 @@
-from Plugin.tool import *
+# -*- coding: UTF-8 -*-
+from Plugin.tool import extractor, format_time, av2bv
 import requests
 import json
 
@@ -30,41 +31,41 @@ class user:
                 **extractor(Data['data'], dicts = InfoDict)}
         # user_coins = user_info['data']['coins']  # 硬币(未实现调用cookie所以隐藏)
 
+    def user_follows(self):
+        Data = requests.get(f'https://api.bilibili.com/x/relation/stat?vmid={self.user_uid}')
+        JsonData = json.loads(Data.text)
+        FollowCopyList = ['black', 'follower', 'following']
+        return {'response_code': Data.status_code, 'return_code': JsonData['code'],
+                **extractor(data = JsonData['data'], copy_list = FollowCopyList)}
+
     def user_top_video(self):
         """返回用户的置顶视频"""
-        # 请求用户置顶视频
-        TopVideo = requests.get(f'https://api.bilibili.com/x/space/top/arc?vmid={self.user_uid}',
-                                headers = self.headers)
-        # 获取请求资源码
-        response_code = TopVideo.status_code
-        TopVideo = json.loads(TopVideo.text)
-        # 获取网站返回码
-        return_code = TopVideo['code']
-        if return_code != 0 or return_code != 0:  # 判断是否有置顶视频
-            return {'response_code': response_code, 'return_code': return_code}
-        TopVideoDict = {'aid': 'aid', 'bvid': 'bvid', 'tname': 'tname', 'copyright': 'copyright',
-                        'title': 'title', 'upload_time': 'ctime', 'introduction': 'desc'}
-        TopVideoData = {'view': 'view', 'danmaku': 'danmaku', 'reply': 'reply', 'like': 'like',
-                        'dislike': 'dislike', 'coin': 'coin', 'collect': 'favorite', 'share': 'share'}
-        TopVideo = {**extractor(TopVideo['data'], TopVideoDict), **extractor(TopVideo['data']['stat'], TopVideoData)}
-        TopVideo['upload_time'] = format_time(TopVideo['upload_time'])
-        return {'response_code': response_code, 'return_code': return_code, **TopVideo}
+        Data = requests.get(f'https://api.bilibili.com/x/space/top/arc?vmid={self.user_uid}', headers = self.headers)
+        JsonData = json.loads(Data.text)
+        if Data.status_code != 200 or JsonData['code'] != 0:  # 判断是否有置顶视频
+            return {'response_code': Data.status_code, 'return_code': JsonData['code']}
+        TopVideoDict = {'aid': 'aid', 'bvid': 'bvid', 'tname': 'tname', 'copyright': 'copyright', 'title': 'title',
+                        'upload_time': 'ctime', 'introduction': 'desc', 'view': 'view', 'danmaku': 'danmaku',
+                        'reply': 'reply', 'like': 'like', 'dislike': 'dislike', 'coin': 'coin', 'collect': 'favorite',
+                        'share': 'share'}
+        ReturnData = extractor(data = {**JsonData['data'], **JsonData['data']['stat']}, dicts = TopVideoDict)
+        ReturnData['upload_time'] = format_time(int(ReturnData['upload_time']))
+        return {'response_code': Data.status_code, 'return_code': JsonData['code'], **ReturnData}
 
     def user_video(self, pn):
         """Return user`s video list"""
+        Data = requests.get(f'http://space.bilibili.com/ajax/member/getSubmitVideos?mid={self.user_uid}&page={pn}',
+                            headers = self.headers)
+        JsonData = json.loads(Data.text)
         VideoList = []
-        # 获取用户视频列表
-        VideoListData = json.loads(
-            requests.get(f'http://space.bilibili.com/ajax/member/getSubmitVideos?mid={self.user_uid}&page={pn}',
-                         headers = self.headers).text)
-        # 获取数据
-        Page = VideoListData['data']['pages']
+        Page = JsonData['data']['pages']
         VideoDict = {'title': 'title', 'reply': 'comment', 'view': 'play', 'upload_time': 'created',
                      'danmaku': 'video_review', 'introduction': 'description', 'length': 'length',
                      'collect': 'favorites', 'aid': 'aid'}
-        for Video in VideoListData['data']['vlist']:
-            video = extractor(Video, VideoDict)
+        for Video in JsonData['data']['vlist']:
+            video = extractor(data = Video, dicts = VideoDict)
             video['bvid'] = av2bv(video['aid'])
             video['upload_time'] = format_time(video['upload_time'])
             VideoList.append(video)
-        return {'pages': Page, 'data': VideoList}
+        return {'response_code': Data.status_code, 'return_code': 0 if JsonData['status'] else -1,
+                'pages': Page, 'data': VideoList}
