@@ -49,7 +49,7 @@ class user:
                         'reply': 'reply', 'like': 'like', 'dislike': 'dislike', 'coin': 'coin', 'collect': 'favorite',
                         'share': 'share'}
         ReturnData = extractor(data = {**JsonData['data'], **JsonData['data']['stat']}, dicts = TopVideoDict)
-        ReturnData['upload_time'] = format_time(int(ReturnData['upload_time']))
+        ReturnData['upload_time'] = int(ReturnData['upload_time'])
         return {'response_code': Data.status_code, 'return_code': JsonData['code'], **ReturnData}
 
     def user_video(self, pn):
@@ -65,7 +65,6 @@ class user:
         for Video in JsonData['data']['vlist']:
             video = extractor(data = Video, dicts = VideoDict)
             video['bvid'] = av2bv(video['aid'])
-            video['upload_time'] = format_time(video['upload_time'])
             VideoList.append(video)
         return {'response_code': Data.status_code, 'return_code': 0 if JsonData['status'] else -1,
                 'pages': Page, 'data': VideoList}
