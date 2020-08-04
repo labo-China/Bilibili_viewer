@@ -75,7 +75,7 @@ class shower:
         shower.TryPrint('作者:', data['owner'], other = '')
         shower.TryPrint('av', data['aid'], change_line = False)
         shower.TryPrint('/', data['bvid'], ' ', change_line = False)
-        print(data['upload_time'], end = ' ')
+        print(format_time(data['upload_time']), end = ' ')
         shower.TryPrint('时长: ', data['length'], other = '')
         print('简介:')
         shower.PrintIntroduction({'introduction': data['introduction']})
