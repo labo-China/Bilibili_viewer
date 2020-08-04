@@ -1,12 +1,10 @@
 # -*- coding: UTF-8 -*-
-# import nb_log
-
-
 from Plugin.user import user
 from Plugin.video import video
 from Plugin.search import new_search
 from Plugin.bangumi import bangumi
 from Plugin.download import download
+from Plugin.background import *
 from Plugin.tool import *
 
 
