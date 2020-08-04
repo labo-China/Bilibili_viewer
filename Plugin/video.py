@@ -2,7 +2,7 @@
 import requests
 import json
 import time
-from Plugin.tool import extractor, format_time, TickToMinute, av2bv
+from Plugin.tool import extractor, TickToMinute, av2bv
 
 
 class video:
@@ -26,8 +26,6 @@ class video:
         VideoInfoDict = {'upload_time': 'pubdate', 'owner': ['owner', 'name']}
         VideoInfoList = ['aid', 'bvid', 'title', 'tname', 'copyright']
         Data = extractor(data = self.MainData['data'], dicts = VideoInfoDict, copy_list = VideoInfoList)
-        Data['copyright'] = '自制' if Data['copyright'] == 1 else '转载'
-        Data['upload_time'] = format_time(Data['upload_time'])
         return {'response_code': self.response_code, 'return_code': self.return_code, **Data}
 
     def introduction(self) -> dict:
