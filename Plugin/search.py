@@ -34,7 +34,7 @@ class new_search:
                      'bvid': Videos['bvid'], 'danmaku': Videos['video_review'],
                      'introduction': replace_for_web(Videos['description']), 'length': Videos['duration'],
                      'collect': Videos['favorites'], 'view': Videos['play'], 'reply': Videos['review'],
-                     'upload_time': format_time(Videos['pubdate']),
+                     'upload_time': Videos['pubdate'],
                      'tag': Videos['tag'], 'tname': Videos['typename']}
             VideoList.append(Video)
         return VideoList
