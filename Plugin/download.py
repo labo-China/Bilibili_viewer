@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 import hashlib
 import requests
 import re
@@ -34,7 +35,7 @@ class download:
         url = 'https://interface.bilibili.com/v2/playurl?%s&sign=%s' % (params, chksum)
         # 设置referer项
         referer = f'https://www.bilibili.com/video/{self.zipname}{self.num}'
-        return_url = json.loads(requests.get(url).content.decode())['durl']
+        return_url = json.loads(requests.get(url).text)['durl']
         for urls in return_url:
             url_list.append(urls['url'])
             size_list.append(urls['size'])
