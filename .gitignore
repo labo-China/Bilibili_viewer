@@ -1,5 +1,9 @@
 /.idea
 /DanmakuFactory
+/release
+/*/__pycache__
+/CommandLine
+/example-*
 /FFmpeg.exe
 /aria2c.exe
 /aria2.conf

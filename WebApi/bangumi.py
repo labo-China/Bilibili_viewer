@@ -1,9 +1,7 @@
-# -*- coding: UTF-8 -*-
-# import requests
+# coding: UTF-8
+import requests
 import json
-from Plugin.tool import extractor  # , requests
-
-# requests = requests()
+from scripts.tool import extractor, ceil
 
 
 class bangumi:
@@ -46,20 +44,25 @@ class bangumi:
                 **PublishData, 'tag_list': TagTuple, 'introduction': Introduction}
 
     @staticmethod
-    def get_relate_video(tag_id: int, page: int = 1, page_size: int = 10) -> dict:
-        Data = requests.get(f'https://api.bilibili.com/x/web-interface/tag/top?pn={page}&ps={page_size}&tid={tag_id}')
-        if Data.text == '':
-            return {'response_code': Data.status_code, 'return_code': '-1', 'videos': []}
-        JsonData = json.loads(Data.text)
+    def get_relate_video(tag_id: int, page_size: int = 10) -> dict:
+        BaseUrl = 'https://api.bilibili.com/x/web-interface/tag/top?pn={}&ps={}&tid={}'
+        Page = 1
+        Data = requests.get(BaseUrl.format(Page, page_size, tag_id))
         VideoInfoDict = {'aid': 'aid', 'bvid': 'bvid', 'title': 'title', 'tname': 'tname',
                          'copyright': 'copyright', 'upload_time': 'pubdate', 'introduction': 'desc'}
         VideoDataDict = {'view': 'view', 'danmaku': 'danmaku', 'like': 'like', 'dislike': 'dislike',
                          'reply': 'reply', 'coin': 'coin', 'collect': 'favorite', 'share': 'share'}
-        VideoList = []
-        for Video in JsonData['data']:
-            VideoList.append({**extractor(data = Video, dicts = VideoInfoDict),
-                              **extractor(data = Video['stat'], dicts = VideoDataDict)})
-        return {'response_code': Data.status_code, 'return_code': JsonData['code'], 'videos': VideoList}
+
+        while Data.text != '':
+            Page += 1
+            JsonData = json.loads(Data.text)
+            VideoList = []
+
+            for Video in JsonData['data']:
+                VideoList.append({**extractor(data = Video, dicts = VideoInfoDict),
+                                  **extractor(data = Video['stat'], dicts = VideoDataDict)})
+            Data = requests.get(BaseUrl.format(Page, page_size, tag_id))
+            yield {'response_code': Data.status_code, 'return_code': JsonData['code'], 'videos': VideoList}
 
     @staticmethod
     def get_tag_id(name: str) -> dict:
@@ -71,47 +74,53 @@ class bangumi:
     @staticmethod
     def get_episodes(season_id: int) -> dict:
         Data = requests.get(f'https://api.bilibili.com/pgc/web/season/section?season_id={season_id}', )
-        JsonDATA = json.loads(Data.text)
+        JsonData = json.loads(Data.text)
+        if not JsonData['result']['section']:
+            return {'response_code': Data.status_code, 'return_code': -1, 'main_episodes': [], 'other_episodes': []}
         EpisodeDict = {'aid': 'aid', 'title': 'long_title', 'episode_id': 'id', 'short_title': 'title'}
         MainEpisodes = []
-        for MainEpisode in JsonDATA['result']['main_section']['episodes']:
+        for MainEpisode in JsonData['result']['main_section']['episodes']:
             MainEpisodes.append(extractor(data = MainEpisode, dicts = EpisodeDict))
         OtherEpisodes = []  # 其它剧集的分支列表
-        for OtherEpisode in JsonDATA['result']['section']:
+        for OtherEpisode in JsonData['result']['section']:
             Episodes = []  # 剧集分支的具体剧集列表
             for range_var3 in OtherEpisode['episodes']:
                 Episodes.append(extractor(data = range_var3, dicts = EpisodeDict))
             OtherEpisodes.append(Episodes)
-        return {'response_code': Data.status_code, 'return_code': JsonDATA['code'],
+        return {'response_code': Data.status_code, 'return_code': JsonData['code'],
                 'main_episodes': MainEpisodes, 'other_episodes': OtherEpisodes}
 
     @staticmethod
-    def get_replies(media_id: int, reply_type: str = 'short', sort: 'int, str' = 0,
-                    cursor: int = None, page_size: int = 20):
+    def get_replies(media_id: int, reply_type: str = 'short', sort: 'int, str' = 0, page_size: int = 20):
         """
         获取番剧的长/短评\n
         :param media_id: 番剧的media_id
         :param reply_type: 获取的评论类型(short为短评,long为长评)(short)
         :param sort: 评论的排序(1为最新,0为默认)(0)
-        :param cursor: 用于连续请求评论的标识符,可由此方法的返回值得到(None)
         :param page_size: 一次请求返回的评论数量(20)
         """
-        Url = f'https://api.bilibili.com/pgc/review/{reply_type}/list?media_id={media_id}&ps={page_size}&sort={sort}' \
-              + (f'&cursor={cursor}' if cursor is not None else '')
-        Data = requests.get(Url)
-        JsonData = json.loads(Data.text)
-        ReplyList = []
-
+        BaseUrl = 'https://api.bilibili.com/pgc/review/{}/list?media_id={}&ps={}&sort={}'
+        Page = ceil(
+            json.loads(requests.get(BaseUrl.format(reply_type, media_id, page_size, sort)).text)['data']['total'] / 20)
+        cursor = None
         ShortReplyDict = {'name': ['author', 'uname'], 'uid': 'mid', 'vip_status': ['vip', 'vipStatus'],
                           'content': 'content', 'upload_time': 'mtime', 'progress': 'progress', 'score': 'score',
                           'like': ['stat', 'likes']}
         LongReplyDict = {**ShortReplyDict, 'reply': ['stat', 'reply'], 'url': 'url'}
 
-        for replies in JsonData['data']['list']:
-            ReplyList.append(
-                extractor(data = replies, dicts = ShortReplyDict if reply_type == 'short' else LongReplyDict))
-        return {'response_code': Data.status_code, 'return_code': JsonData['code'], 'total': JsonData['data']['total'],
-                'cursor': JsonData['data']['next'], 'replies': ReplyList}
+        for index in range(Page):
+            Url = BaseUrl.format(reply_type, media_id, page_size, sort) + (f'&cursor={cursor}' if cursor else '')
+            Data = requests.get(Url)
+            JsonData = json.loads(Data.text)
+            cursor = JsonData['data']['next']
+            ReplyList = []
+
+            for replies in JsonData['data']['list']:
+                ReplyList.append(
+                    extractor(data = replies, dicts = ShortReplyDict if reply_type == 'short' else LongReplyDict))
+            yield {'response_code': Data.status_code, 'return_code': JsonData['code'],
+                   'total': JsonData['data']['total'],
+                   'cursor': JsonData['data']['next'], 'replies': ReplyList}
 
     @staticmethod
     def get_recommends(season_id: int) -> dict:

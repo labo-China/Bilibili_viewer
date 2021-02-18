@@ -1,7 +1,12 @@
-# -*- coding: UTF-8 -*-
-from Plugin.tool import extractor, format_time, av2bv
+# coding: UTF-8
 import requests
 import json
+from scripts.tool import extractor, av2bv
+from scripts.tool import parseable as psb
+
+
+def get_info(uid: psb):
+    pass
 
 
 class user:
@@ -29,7 +34,7 @@ class user:
                     'fans_badge': 'fans_badge', 'official': ['official', 'title'], 'vip': ['vip', 'status']}
         return {'response_code': response_code, 'return_code': return_code,
                 **extractor(Data['data'], dicts = InfoDict)}
-        # user_coins = user_info['data']['coins']  # 硬币(未实现调用cookie所以隐藏)
+        # user_coins = user_info['data']['coins']  # 硬币(未实现获取SESSDATA所以隐藏)
 
     def user_follows(self):
         Data = requests.get(f'https://api.bilibili.com/x/relation/stat?vmid={self.user_uid}')
@@ -54,17 +59,21 @@ class user:
 
     def user_video(self, pn):
         """Return user`s video list"""
-        Data = requests.get(f'http://space.bilibili.com/ajax/member/getSubmitVideos?mid={self.user_uid}&page={pn}',
-                            headers = self.headers)
+        # Data = requests.get(f'http://space.bilibili.com/ajax/member/getSubmitVideos?mid={self.user_uid}&page={pn}',
+        #                    headers = self.headers)
+        Data = requests.get(f'https://api.bilibili.com/x/space/arc/search'
+                            f'?mid={self.user_uid}&ps=30&tid=0&pn={pn}&keyword=&order=pubdate')
+        response_code = Data.status_code
         JsonData = json.loads(Data.text)
+        return_code = JsonData['code']
         VideoList = []
-        Page = JsonData['data']['pages']
+        Page = JsonData['data']['page']['count']
         VideoDict = {'title': 'title', 'reply': 'comment', 'view': 'play', 'upload_time': 'created',
                      'danmaku': 'video_review', 'introduction': 'description', 'length': 'length',
                      'collect': 'favorites', 'aid': 'aid'}
-        for Video in JsonData['data']['vlist']:
+        for Video in JsonData['data']['list']['vlist']:
             video = extractor(data = Video, dicts = VideoDict)
             video['bvid'] = av2bv(video['aid'])
             VideoList.append(video)
-        return {'response_code': Data.status_code, 'return_code': 0 if JsonData['status'] else -1,
+        return {'response_code': response_code, 'return_code': return_code,
                 'pages': Page, 'data': VideoList}

@@ -1,11 +1,14 @@
-# -*- coding: UTF-8 -*-
-from Plugin.user import user
-from Plugin.video import video
-from Plugin.search import new_search
-from Plugin.bangumi import bangumi
-from Plugin.download import download
-from Plugin.background import *
-from Plugin.tool import *
+# coding: UTF-8
+from WebApi.video import video
+from WebApi.user import user
+from WebApi.search import new_search
+from WebApi.bangumi import bangumi
+from FileApi.download import download
+from WebApi.background import *
+from scripts.tool import *
+from classes import *
+
+requests = requests_debug()
 
 
 class shower:
@@ -17,7 +20,7 @@ class shower:
             :param data: 文字数据
             :param chars_limit: 一行文字数量限制
             :param hand_char: 每行文字的缩进"""
-        Line = data['introduction'].split()
+        Line = data['introduction'].split('\n')
         for Char in Line:
             for Indexer in range(int(len(Char) / chars_limit) + 1):
                 try:
@@ -41,7 +44,7 @@ class shower:
         shower.TryPrint('粉丝勋章已开通' if data['fans_badge'] else '', ' ', change_line = False)
         shower.TryPrint('生日:', data['birthday'] if data['birthday'] else '')
         print('个性签名:', data['sign'])
-        shower.TryPrint('稿件:', data['video_count'], change_line = False)
+        shower.TryPrint('稿件:', data['video_count'], ' ', change_line = False)
         shower.TryPrint('粉丝:', data['fans'] if data['fans'] else data['follower'])
 
     @staticmethod
@@ -57,7 +60,7 @@ class shower:
         print(Header + str(data['like']), '赞', end = ' ')
         shower.TryPrint(data['reply'], ' ', '评论' if reply_depth == 0 else '', other = '')
         shower.TryPrint(Header + 'UP主赞了' if data['up_like'] else '', change_line = False)
-        shower.TryPrint(Header + 'UP主回复了' if data['up_reply'] else '', change_line = False)
+        shower.TryPrint(Header + 'UP主回复了' if data['up_reply'] else '')
         print(Header + '————————————————') if print_line else None
         if data['replies']:
             for ChildReply in data['replies']:
@@ -87,9 +90,11 @@ class shower:
 
     @staticmethod
     def PrintBangumi(data: dict):
-        print(data['title'], f'{data["score"]}分', *data['tag_list'], f'{data["score_count"]}人评价了此部番剧')
+        print(data['title'], *data['tag_list'], end = ' ')
+        shower.TryPrint(data['score'], '分', ' ', data['score_count'], '人评价了此部番剧', other = '')
         print(f'{data["view"]}播放 {data["danmaku"]}弹幕 {data["coin"]}硬币 {data["follower"]}人追了此部番')
-        print(data['start_time'], data['update_time'], f'已更新至{data["num"]}集')
+        print(data['start_time'], data['update_time'], end = ' ')
+        shower.TryPrint('已更新至', data['num'], '集', other = '')
         print('简介:')
         shower.PrintIntroduction({'introduction': data['introduction']})
 
@@ -162,22 +167,14 @@ class viewer:
         Choice = input('是否查看视频评论？(Y/Enter):').upper()
         if Choice == 'Y':
             Sort = input('选择你的评论排序方式(0=按时间，2=按热度)')
-            try:
-                Page = 1
-                while True:
-                    VideoReply = VideoResponse.get_replies(pn = Page, sort = Sort)
-                    for Replies in VideoReply['replies']:
-                        shower.PrintReply(data = fill(Replies, reply_module), print_line = True)
-                    Choice = input('回车以查看下一页评论，输入exit退出:')
-                    if Choice == 'exit':
-                        raise IndexError
-                    else:
-                        if Page == VideoReply['all_page']:
-                            raise IndexError
-                        Page += 1
-                        continue
-            except IndexError:
-                pass
+            Page = 1
+            for ReplyList in VideoResponse.get_replies(sort = Sort):
+                for Replies in ReplyList['replies']:
+                    shower.PrintReply(data = fill(Replies, reply_module), print_line = True)
+                Choice = input('回车以查看下一页评论，输入exit退出:')
+                if Choice == 'exit':
+                    break
+                Page += 1
 
         Choice = input('是否下载视频和弹幕？(Y/Enter):').upper()
         if Choice == 'Y':
@@ -252,7 +249,7 @@ class viewer:
                     Video = fill(Video, video_module)
                     shower.PrintVideo(Video)
                     print('-------------------')
-            if SearchType == 'user':
+            elif SearchType == 'user':
                 UserList = Data.get_user()
                 for User in UserList:
                     shower.PrintUser(fill(User, user_module))
@@ -282,32 +279,27 @@ class viewer:
 
         if input('是否查看具体剧集列表?(Y/Enter)').upper() == 'Y':
             EpisodesList = bangumi.get_episodes(SeasonId)
-            print('------正片------')
+            print('------正片------') if EpisodesList['main_episodes'] else None
             for MainEpisode in EpisodesList['main_episodes']:
                 shower.PrintEpisodes(MainEpisode, '\t')
                 print('\t------------------')
             print('------附加------') if EpisodesList['other_episodes'] else None
             for OtherEpisodes in EpisodesList['other_episodes']:
-                shower.PrintEpisodes(OtherEpisodes, '\t')
+                shower.PrintEpisodes(OtherEpisodes[0], '\t')
                 print('\t------------------')
 
         def reply_(reply_type: str, page_size: int):
             if input(f'是否获取{"长" if reply_type == "long" else "短"}评列表?(Y/Enter)').upper() == 'Y':
                 Sort = input('选择你的评论排序方式(1=按时间，0=按用户评分)')
                 RepliesList = bangumi.get_replies(self.num, reply_type = reply_type, sort = Sort, page_size = page_size)
-                Page = ceil(RepliesList['total'] / page_size)
-                print('total', Page)
-                for index in range(Page):
-                    if len(RepliesList['replies']) == 0:
+                for Replies in RepliesList:
+                    if len(Replies['replies']) == 0:
                         break
-                    for Replies in RepliesList['replies']:
-                        shower.PrintReply(fill(Replies, reply_module))
+                    for ChildReplies in Replies['replies']:
+                        shower.PrintReply(fill(ChildReplies, reply_module))
                         print('----------------')
                     if input('回车以查看下一页评论,输入exit退出') == 'exit':
-                        raise BaseException
-                    cursor = RepliesList['cursor']
-                    RepliesList = bangumi.get_replies(self.num, reply_type = reply_type, sort = Sort, cursor = cursor,
-                                                      page_size = page_size)
+                        break
 
         reply_('short', 20)
         reply_('long', 1)
@@ -315,14 +307,13 @@ class viewer:
         if input('是否查看相关视频?(Y/Enter)').upper() == 'Y':
             RelateVideoList = bangumi.get_relate_video(BangumiTagId['tag_id'])
             Index = 1
-            while not self.CheckForResponse(RelateVideoList, error = ''):
-                for Video in RelateVideoList['videos']:
+            for RelateVideos in RelateVideoList:
+                for Video in RelateVideos['videos']:
                     print('----------------')
                     shower.PrintVideo(fill(Video, video_module))
                 if input('回车以查看下一页视频,输入exit退出') == 'exit':
                     break
                 Index += 1
-                RelateVideoList = bangumi.get_relate_video(BangumiTagId['tag_id'], page = Index)
             # print('----------------')
 
     @staticmethod
@@ -350,31 +341,26 @@ def main(item: list, error_message: str = '输入错误 例:\nav:2\nuid:2\nbv:1x
         run = viewer('search', item[1])
         run.view_search()
     elif item[0] == 'debug':
-        print('####################')
-        print('#   Debugging...   #')
-        print('#   Item:Bangumi   #')
-        print('####################')
-        print('------info------')
-        info = bangumi.get_bangumi_info(28222671)
-        print(info)
-        print('------data------')
-        DataA = bangumi.get_bangumi_data(info['season_id'])
-        print(DataA)
-        print('------html_data------')
-        print(bangumi.get_bangumi_data_by_html(28222671))
-        print('------tag_id------')
-        tag_id = bangumi.get_tag_id(info['title'])
-        print(tag_id)
-        print('------top_video------')
-        top_video = bangumi.get_top_video(tag_id['tag_id'])
-        for x in top_video['videos']:
-            print(x)
-        print('------episodes------')
-        print(bangumi.get_episodes(info['season_id']))
-        print('------short_reply------')
-        print(bangumi.get_replies(28222671))
-        print('------long_reply------')
-        print(bangumi.get_replies(media_id = 28222671, reply_type = 'long'))
+        from time import sleep
+        print('#########################')
+        print('#     Debugging...      #')
+        print('# Item:videoPlayer(GUI) #')
+        print('#########################')
+        print('Param: aid:2, chunk_size: 1048576')
+        # part_index = len(video('aid', '2').video_part()['part'])
+        url_list = download('.', 'aid', '2').get_video_download_urls(0)
+        print(url_list)
+        for index, url in enumerate(url_list['url']):
+            download_number = ceil(url_list['size'][index] / 1048576)
+            for number in range(download_number):
+                sleep(0.5)
+                ranges = (number + 1) * 1048576 if number + 1 != download_number else ''
+                headers = {'referer': url_list['referer'], 'range': f'bytes={number * 1048576}-{ranges}'}
+                with open(f'D:/1/{index}-{number}.flv', 'wb') as f:
+                    f.write(requests.get(url, headers = headers).content)
+
+        # for url in url_list:
+
     elif item[0] == 'console':
         print('已进入调试模式，输入EXIT_CONSOLE以退出')
         console()
@@ -387,6 +373,9 @@ def main(item: list, error_message: str = '输入错误 例:\nav:2\nuid:2\nbv:1x
 
 
 if __name__ == '__main__':
+    a = Video('av', 16020228)
+    # a.load()
+    # print(a._data)
     while True:
         print('--------------------')
         message = input('输入你要爬取信息的特征码\n例：uid:439067826:\n').split(':')

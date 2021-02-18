@@ -1,9 +1,27 @@
-# -*- coding: UTF-8 -*-
+# coding: UTF-8
 import hashlib
 import requests
 import re
 import json
 import os
+
+
+def multi_part_download(url: str, headers: dict, path: str, chunk_size: int = 1048576):
+    req = requests.get(url, stream = True, headers = headers)
+    with open(path, 'wb') as file:
+        for content in req.iter_content(chunk_size = chunk_size):
+            if content:
+                file.write(c)
+                file.flush()
+
+
+def aria2_download(url: str, path: str, config_path: str = './aria2.conf', use_config: bool = True, **kwargs):
+    command = f'aria2c.exe "{url}"  -o "{path}" '
+    if use_config:
+        command += f'--conf-path="{config_path}" '
+    for k in kwargs:
+        command += f'--{k}={kwargs[k]} '
+    os.system(command)
 
 
 class download:
@@ -22,35 +40,28 @@ class download:
 
     def get_video_download_urls(self, part, quality = 80):
         print('正在获取下载链接...', end = '')
-        url_list = []
-        size_list = []
-        # 取得并访问可以获取URL的网址
         cid = re.findall('"cid":(.*?),',
                          requests.get(f'https://api.bilibili.com/x/player/pagelist?{self.basicname}={self.num}').text)[
             part]
-        entropy = 'rbMCKn@KuamXWlPMoJGsKcbiJKUfkPF_8dABscJntvqhRSETg'
-        appkey, sec = ''.join([chr(ord(i) + 2) for i in entropy[::-1]]).split(':')
-        params = 'appkey=%s&cid=%s&otype=json&qn=%s&quality=%s&type=' % (appkey, cid, quality, quality)
-        chksum = hashlib.md5(bytes(params + sec, 'utf8')).hexdigest()
+        params = 'appkey=iVGUTjsxvpLeuDCf&cid=%s&otype=json&qn=%s&quality=%s&type=' % (cid, quality, quality)
+        chksum = hashlib.md5(bytes(params + 'aHRmhWMLkdeMuILqORnYZocwMBpMEOdt', 'utf8')).hexdigest()
         url = 'https://interface.bilibili.com/v2/playurl?%s&sign=%s' % (params, chksum)
-        # 设置referer项
         referer = f'https://www.bilibili.com/video/{self.zipname}{self.num}'
-        return_url = json.loads(requests.get(url).text)['durl']
-        for urls in return_url:
-            url_list.append(urls['url'])
-            size_list.append(urls['size'])
-        # 返回数据
-        return {'url': url_list, 'referer': referer, 'cid': cid}
+        return_url, return_size = [], []
+        url_dict = json.loads(requests.get(url).text)['durl']
+        [return_url.append(urls['url']) for urls in url_dict] + [return_size.append(size['size']) for size in url_dict]
+        return_url = [urls['url'] for urls in url_dict]
+        return {'url': return_url, 'size': return_size, 'referer': referer, 'cid': cid}
 
     def video_downloader(self, url, referer):
         # 更新请求头，加上referer
         self.headers.update({'Referer': referer})
         video_download_name = []
         command = 'aria2c.exe "{}" --conf-path=./aria2.conf --referer={} -d "{}/" -o "part{}"'
-        for range_var in range(len(url)):
-            print(f'\r下载中...[{range_var + 1}/{len(url)}]', end = '')
-            os.system(command.format(url[range_var], referer, self.save_path, range_var + 1))
-            video_download_name.append('part' + str(range_var + 1))
+        for Index in range(len(url)):
+            print(f'\r下载中...[{Index + 1}/{len(url)}]', end = '')
+            os.system(command.format(url[Index], referer, self.save_path, Index + 1))
+            video_download_name.append('part' + str(Index + 1))
         # 返回下载的视频分段文件名列表
         return {'filename': video_download_name}
 
