@@ -1,5 +1,6 @@
 # coding: UTF-8
-from scripts.tool import extractor, replace_for_web, replace_for_highlight
+from scripts.tool import replace_for_web, replace_for_highlight
+from scripts.data_process import extractor
 import requests
 import json
 

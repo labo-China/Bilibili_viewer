@@ -2,14 +2,6 @@ from scripts.tool import parseable as psb
 from scripts.tool import log_str
 
 
-class DictObject:
-    def __init__(self, init_dict: dict):
-        for keys in init_dict.keys():
-            exec(f'self.{keys} = {init_dict[keys]}')
-            if type(init_dict[keys]) is dict:
-                exec(f'self.{keys} = DictObject({init_dict[keys]})')
-
-
 class Video:
     from WebApi import video
 

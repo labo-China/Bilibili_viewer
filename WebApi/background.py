@@ -1,7 +1,7 @@
 # coding: UTF-8
 import requests
 import json
-from scripts.tool import extractor
+from scripts.data_process import extractor
 
 
 # website-background

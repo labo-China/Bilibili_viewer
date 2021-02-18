@@ -1,7 +1,8 @@
 # coding: UTF-8
 import requests
 import json
-from scripts.tool import extractor, ceil
+from scripts.data_process import extractor
+from math import ceil
 
 
 class bangumi:

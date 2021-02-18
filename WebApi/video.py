@@ -1,8 +1,10 @@
 # coding: UTF-8
 import requests
 import json
-from scripts.tool import extractor, TickToMinute, bv2av, ceil
+from scripts.tool import TickToMinute
+from scripts.data_process import extractor, bv2av
 from scripts.tool import parseable as psb
+from math import ceil
 
 
 def get_raw(code: psb, num: psb) -> dict:

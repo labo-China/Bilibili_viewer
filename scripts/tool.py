@@ -3,28 +3,6 @@ from typing import Union
 
 
 # using-functions
-def bv2av(x):
-    alphabet = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
-    r = 0
-    for i, v in enumerate([11, 10, 3, 8, 4, 6]):
-        r += alphabet.find(x[v]) * 58 ** i
-    return (r - 0x2_0840_07c0) ^ 0x0a93_b324
-
-
-def av2bv(x):
-    alphabet = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
-    x = (x ^ 0x0a93_b324) + 0x2_0840_07c0
-    r = list('BV1**4*1*7**')
-    for v in [11, 10, 3, 8, 4, 6]:
-        x, d = divmod(x, 58)
-        r[v] = alphabet[d]
-    return ''.join(r)
-
-
-def ceil(x: float) -> int:
-    return int(x) if int(x) == x else int(x + 1)
-
-
 def ReplaceByDict(string: str, replace_list: dict) -> str:
     for replace_str in replace_list:
         string = string.replace(replace_str, replace_list[replace_str])
@@ -62,49 +40,6 @@ def TickToMinute(tick: int, minute_time: int = 60) -> str:
     :return: 转换后的时间戳
     """
     return f'{str((int(tick / minute_time))).zfill(2)}:{str(tick % minute_time).zfill(2)}'
-
-
-def extractor(data: dict, dicts: dict = None, copy_list: list = None) -> dict:
-    copy_list = [] if copy_list is None else copy_list
-    dicts = {} if dicts is None else dicts
-    try:
-        iter(data)  # 检测一个对象是否为可迭代对象，不是就返回
-    except TypeError:
-        return {}
-    return_data = {}
-    for copy in copy_list:
-        return_data.update({copy: data[copy]} if copy in data else set())
-    for x in dicts:  # 遍历dicts的项，获得key
-        if type(dicts[x]) is list:  # 如果key的值是一个列表，那么就递归处理
-            for key in dicts[x]:
-                if key in data:
-                    local = extractor(data[key], {x: dicts[x][1:] if len(dicts[x][1:]) != 1 else dicts[x][1:][0]})
-                    return_data.update(local if local else {})
-        elif x in dicts:  # 如果key的值不是列表且在data的键中，就直接键值对应
-            return_data.update({x: data[dicts[x]]} if dicts[x] in data else {x: None})
-    return return_data
-
-
-def get_null_data(mode_dict: dict) -> dict:
-    for x in mode_dict:
-        mode_dict[x] = ''
-    return mode_dict
-
-
-def fill(target: dict, fill_list: list, fill_object: any = None) -> dict:
-    """
-    使用列表来填充字典,例:\n
-    >>> fill({1:3}, [1,2,3,4], 5)\n
-    >>> {1:3,2:5,3:5,4:5}\n
-    :param target: 需要填充的字典
-    :param fill_list: 需要填充的键的列表
-    :param fill_object: 用于填充空键的对象(None)
-    :return: 填充后的字典
-    """
-    dictionary = target
-    for fill_index in set(fill_list):
-        dictionary.setdefault(fill_index, fill_object)
-    return dictionary
 
 
 def console(prefix: str = 'Console:', exit_key: str = 'EXIT_CONSOLE', print_traceback: bool = True,
@@ -146,12 +81,6 @@ def console(prefix: str = 'Console:', exit_key: str = 'EXIT_CONSOLE', print_trac
 
 
 # dev-functions
-def replace_for_NTFS(string: str):
-    ReplaceDict = {'/': '-', '\\': '-', ':': '-', '*': '-', '<': '-', '>': '-', '?': '-'}
-    ReplaceByDict(string, ReplaceDict)
-    return string
-
-
 def requests_debug():
     from functools import wraps
     import requests
@@ -216,18 +145,6 @@ def requests_debug():
     return requests
 
 
-def urllib_get(url: str, headers: dict = None, decode: bool = False) -> dict:
-    from urllib.request import Request, urlopen
-    from urllib.error import HTTPError
-    request = Request(url = url, headers = headers if headers else {})
-    try:
-        req = urlopen(request)
-    except HTTPError:
-        return {'data': b'', 'complete': False}
-    else:
-        return {'data': (req.read().decode() if decode else req.read()), 'complete': True}
-
-
 def simple_request_generator(init, url: str, dicts: dict, extract_data = None, header: dict = None) -> dict:
     from requests import get
     from json import loads
@@ -241,23 +158,6 @@ def simple_request_generator(init, url: str, dicts: dict, extract_data = None, h
 def get_request(*args, **kwargs):
     from requests import models
     return models.Request(*args, **kwargs).prepare()
-
-
-def simple_request(url: str, session = None, method: str = 'get', **kwargs):
-    from requests import Session
-    from json import loads
-    if not isinstance(session, Session) or session is None:
-        session = Session()
-    Data = session.request(url = url, method = method, **kwargs)
-    if Data.status_code != 200:
-        return {'status': 'fail', 'req': Data.content}
-    else:
-        try:
-            JsonData = loads(Data.text)
-        except json.JSONDecodeError:
-            return {'status': 'json_fail', 'req': Data.content}
-        else:
-            return {'status': 'success' if JsonData['code'] == 0 else 'fail', 'req': JsonData}
 
 
 def log_str(string: str, label: str = 'info') -> str:
@@ -274,7 +174,7 @@ def log_str(string: str, label: str = 'info') -> str:
     return string.join(merge_color_string(**label_dict[label])) if string is not None else ''
 
 
-def break_point_mnt():
+def bp_mnt():
     """Mount your debugger point at here!"""
     print('BREAK!')
     raise BaseException
@@ -305,7 +205,8 @@ init_script = ['from WebApi.video import video',
                'from WebApi.bangumi import bangumi',
                'from FileApi.download import download',
                'from WebApi.background import *',
-               'from WebApi.tool import *',
-               'import requests, re']
+               'from scripts.tool import *',
+               'from scripts.data_process import *',
+               'import requests, re, json']
 
 parseable = Union[int, str]

@@ -6,6 +6,7 @@ from WebApi.bangumi import bangumi
 from FileApi.download import download
 from WebApi.background import *
 from scripts.tool import *
+from scripts.data_process import *
 from classes import *
 
 requests = requests_debug()
