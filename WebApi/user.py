@@ -5,8 +5,29 @@ from scripts.data_process import extractor, av2bv
 from scripts.tool import parseable as psb
 
 
-def get_info(uid: psb):
-    pass
+def get_login_url():
+    Data = requests.get('https://passport.bilibili.com/qrcode/getLoginUrl')
+    JsonData = json.loads(Data.text)
+    if Data.status_code != 200 or JsonData['code'] != 0:
+        return {'response_code': Data.status_code, 'return_code': JsonData['code'], 'url': Data.url}
+    ReturnData = JsonData['data']['url']
+    return {'response_code': Data.status_code, 'return_code': JsonData['code'], 'url': ReturnData}
+
+
+def get_login_info():
+    Data = requests.post('https://passport.bilibili.com/qrcode/getLoginInfo')
+    JsonData = json.loads(Data.text)
+    return {'response_code': Data.status_code, 'return_code': JsonData.get('code'), 'cookies': Data.cookies}
+
+
+def tmp():
+    import qrcode
+    import PIL
+    import io
+    url = get_login_url()
+    s = io.StringIO
+    # a = qrcode.make(url).save(s)
+    # print(a)
 
 
 class user:

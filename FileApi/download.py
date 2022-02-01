@@ -60,6 +60,7 @@ class download:
         command = 'aria2c.exe "{}" --conf-path=./aria2.conf --referer={} -d "{}/" -o "part{}"'
         for Index in range(len(url)):
             print(f'\r下载中...[{Index + 1}/{len(url)}]', end = '')
+            print(command.format(url[Index], referer, self.save_path, Index + 1))
             os.system(command.format(url[Index], referer, self.save_path, Index + 1))
             video_download_name.append('part' + str(Index + 1))
         # 返回下载的视频分段文件名列表

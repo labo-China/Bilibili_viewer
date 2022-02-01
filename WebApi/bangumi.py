@@ -32,7 +32,7 @@ class bangumi:
         from re import findall, compile
 
         PublishPattern = compile(
-            r'"publish":{"is_finish":(.),"is_started":(.),"pub_date":"(.*?)","pub_date_show":"",'
+            r'"publish":{"is_finish":(.),"is_started":(.),"pub_date":"(.*?)","pub_date_show":"(.*?)",'
             r'"release_date_show":"(.*?)","time_length_show":"(.*?)"}')
         PublishTuple = findall(PublishPattern, Data.text)[0]
         PublishData = {'finish': PublishTuple[0], 'start': PublishTuple[1], 'upload_time': PublishTuple[2],

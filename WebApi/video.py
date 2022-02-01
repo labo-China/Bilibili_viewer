@@ -2,7 +2,7 @@
 import requests
 import json
 from scripts.tool import TickToMinute
-from scripts.data_process import extractor, bv2av
+from scripts.data_process import Pattern, bv2av, extractor
 from scripts.tool import parseable as psb
 from math import ceil
 
@@ -17,11 +17,12 @@ def get_info(code: psb, num: psb) -> dict:
     """Return video info"""
     Data = requests.get(f'https://api.bilibili.com/x/web-interface/view?{code}={num}')
     JsonData = json.loads(Data.text)
+    pattern = Pattern({'upload_time': 'pubdate', 'owner': ['owner', 'name']},
+                      ['aid', 'bvid', 'title', 'tname', 'copyright'])
     if JsonData['code'] != 0 or Data.status_code != 200:
-        return {'response_code': JsonData['code'], 'return_code': Data.status_code, 'url': Data.url}
-    VideoInfoDict = {'upload_time': 'pubdate', 'owner': ['owner', 'name']}
-    VideoInfoList = ['aid', 'bvid', 'title', 'tname', 'copyright']
-    ReturnData = extractor(data = JsonData['data'], dicts = VideoInfoDict, copy_list = VideoInfoList)
+        return {'response_code': Data.status_code, 'return_code': JsonData['code'], 'url': Data.url}
+    # ReturnData = extractor(data = JsonData['data'], dicts = VideoInfoDict, copy_list = VideoInfoList)
+    ReturnData = pattern.match(data = JsonData['data'])
     return {'response_code': Data.status_code, 'return_code': JsonData['code'], **ReturnData, 'url': Data.url}
 
 
@@ -30,9 +31,9 @@ def get_introduction(code: psb, num: psb) -> dict:
     Data = requests.get(f'https://api.bilibili.com/x/web-interface/archive/desc?{code}={num}')
     JsonData = json.loads(Data.text)
     if JsonData['code'] != 0 or Data.status_code != 200:
-        return {'response_code': JsonData['code'], 'return_code': Data.status_code, 'url': Data.url}
+        return {'response_code': Data.status_code, 'return_code': JsonData['code'], 'url': Data.url}
     ReturnData = {'introduction': JsonData['data']}  # 这里数据不复杂,就不用extractor了
-    return {'response_code': JsonData['code'], 'return_code': Data.status_code, **ReturnData, 'url': Data.url}
+    return {'response_code': Data.status_code, 'return_code': JsonData['code'], **ReturnData, 'url': Data.url}
 
 
 def get_data(code: psb, num: psb) -> dict:
@@ -43,7 +44,7 @@ def get_data(code: psb, num: psb) -> dict:
         return {'response_code': Data.status_code, 'return_code': JsonData['code'], 'url': Data.url}
     VideoDataDict = {'view': 'view', 'danmaku': 'danmaku', 'like': 'like', 'dislike': 'dislike',
                      'reply': 'reply', 'coin': 'coin', 'collect': 'favorite', 'share': 'share'}
-    ReturnData = extractor(data = self.JsonData['data'], dicts = VideoDataDict)
+    ReturnData = extractor(data = JsonData['data'], dicts = VideoDataDict)
     return {'response_code': Data.status_code, 'return_code': JsonData['code'], **ReturnData, 'url': Data.url}
 
 

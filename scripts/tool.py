@@ -1,8 +1,31 @@
 # coding: UTF-8
 from typing import Union
+import requests
 
 
 # using-functions
+def init():
+    """The initialization of this program"""
+    from os import mkdir
+    from sys import exit
+    try:
+        mkdir('tmp')
+    except FileExistsError:
+        pass
+    except PermissionError:
+        print('Temporary folder create failed because "Premission Denied". '
+              'Please check your permissions and run again.')
+        exit()
+
+
+def close():
+    """The end of the program"""
+    from os import rmdir
+    from sys import exit
+    rmdir('tmp')
+    sys.exit()
+
+
 def ReplaceByDict(string: str, replace_list: dict) -> str:
     for replace_str in replace_list:
         string = string.replace(replace_str, replace_list[replace_str])
@@ -145,21 +168,6 @@ def requests_debug():
     return requests
 
 
-def simple_request_generator(init, url: str, dicts: dict, extract_data = None, header: dict = None) -> dict:
-    from requests import get
-    from json import loads
-    exec(init)
-    Data = get(url, headers = header if header else {})
-    JsonData = loads(Data.text)
-    return {'response_code': Data.status_code, 'return_code': JsonData['code'],
-            **extractor(data = eval(extract_data) if extract_data else JsonData['data'], dicts = dicts)}
-
-
-def get_request(*args, **kwargs):
-    from requests import models
-    return models.Request(*args, **kwargs).prepare()
-
-
 def log_str(string: str, label: str = 'info') -> str:
     def merge_color_string(print_type: str = None, fore_color: str = None, background_color: str = None):
         color_dict = {'black': 30, 'red': 31, 'green': 32, 'yellow': 33, 'blue': 34,
@@ -178,8 +186,8 @@ def bp_mnt():
     """Mount your debugger point at here!"""
     print('BREAK!')
     raise BaseException
-    
-    
+
+
 # modules
 video_module = [
     'aid', 'bvid', 'owner', 'length', 'upload_time', 'tname', 'copyright', 'introduction',
@@ -210,3 +218,7 @@ init_script = ['from WebApi.video import video',
                'import requests, re, json']
 
 parseable = Union[int, str]
+
+FAKE_USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko'
+
+GLOBAL_SESSION = requests.session()

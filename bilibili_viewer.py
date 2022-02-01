@@ -7,7 +7,7 @@ from FileApi.download import download
 from WebApi.background import *
 from scripts.tool import *
 from scripts.data_process import *
-from classes import *
+from scripts.classes import *
 
 requests = requests_debug()
 
@@ -343,12 +343,6 @@ def main(item: list, error_message: str = '输入错误 例:\nav:2\nuid:2\nbv:1x
         run.view_search()
     elif item[0] == 'debug':
         from time import sleep
-        print('#########################')
-        print('#     Debugging...      #')
-        print('# Item:videoPlayer(GUI) #')
-        print('#########################')
-        print('Param: aid:2, chunk_size: 1048576')
-        # part_index = len(video('aid', '2').video_part()['part'])
         url_list = download('.', 'aid', '2').get_video_download_urls(0)
         print(url_list)
         for index, url in enumerate(url_list['url']):
@@ -366,17 +360,17 @@ def main(item: list, error_message: str = '输入错误 例:\nav:2\nuid:2\nbv:1x
         print('已进入调试模式，输入EXIT_CONSOLE以退出')
         console()
     elif item[0] == 'exit':
-        from sys import exit
-        exit()
+        close()
     else:
         print(error_message)
     return
 
 
 if __name__ == '__main__':
-    a = Video('av', 16020228)
-    # a.load()
-    # print(a._data)
+    init()
+    import WebApi
+
+    # WebApi.user.tmp()
     while True:
         print('--------------------')
         message = input('输入你要爬取信息的特征码\n例：uid:439067826:\n').split(':')
